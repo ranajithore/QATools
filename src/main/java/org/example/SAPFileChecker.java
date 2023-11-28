@@ -64,7 +64,11 @@ class DebitRow {
 
         int amountColIdx = 3;
         String amount = data[amountColIdx].trim();
+        boolean isDebit = amount.substring(amount.length() - 1, amount.length()).equals("D");
         this.amount = Double.parseDouble(amount.substring(0, amount.length() - 1));
+        if (isDebit) {
+        	this.amount = -this.amount;
+        }
 
         int taxCodeColIdx = 4;
         this.taxCode = data[taxCodeColIdx].trim();
