@@ -179,7 +179,7 @@ class SAPFile {
     }
     private JSONObject readJSONFile(Path fileName) throws IOException, ParseException {
         JSONParser jsonParser = new JSONParser();
-        String jsonString = Files.readString(fileName);
+        String jsonString = new String(Files.readAllBytes(fileName));
         return (JSONObject) jsonParser.parse(jsonString);
     }
 
@@ -236,12 +236,24 @@ public class SAPFileChecker {
     }
 
     public static void main(String[] args) throws IOException, ParseException {
-        String inputFile = "/Users/ranajithore/IdeaProjects/QATools/src/main/java/org/example/test.txt";
+        String inputDir = "/Users/ranajithore/IdeaProjects/QATools/src/main/java/org/example/test.txt";
         String taxCodeBanCodeMapFile = "/Users/ranajithore/IdeaProjects/QATools/src/main/java/org/example/tax_code_ban_code_mapping.json";
         String glCodeRevenueTypeMapFile = "/Users/ranajithore/IdeaProjects/QATools/src/main/java/org/example/Untitled 2.xlsx";
         SAPFileChecker sapFileChecker = new SAPFileChecker();
-        sapFileChecker.readFile(Paths.get(inputFile), Paths.get(taxCodeBanCodeMapFile), Paths.get(glCodeRevenueTypeMapFile));
-        sapFileChecker.sapFiles.get(0).checkAllTestCases();
+        
+        File dir = new File(inputDir);
+        File[] files = dir.listFiles();
+        if (files == null) {
+        	System.out.println("ERROR: Error in reading directory");
+        }
+        for (File file: files) {
+        	if (!file.isDirectory()) {
+        		System.out.println(file.getName());
+        		sapFileChecker.readFile(Paths.get(file.getAbsolutePath()), Paths.get(taxCodeBanCodeMapFile), Paths.get(glCodeRevenueTypeMapFile));
+                sapFileChecker.sapFiles.get(0).checkAllTestCases();
+        	}
+        }
+        
     }
 
 }
