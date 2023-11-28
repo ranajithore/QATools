@@ -169,6 +169,7 @@ class SAPFile {
 
     public void checkAllTestCases() {
         System.out.println("FILE " + filePath.getFileName());
+        System.out.println("BAN CODE " + this.header.banCode);
 
         System.out.print("CHECKING TOTAL AMOUNT: ");
         System.out.println(this.checkTotalAmount() ? "PASS" : "FAIL");
