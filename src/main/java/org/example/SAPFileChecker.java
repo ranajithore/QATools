@@ -155,6 +155,7 @@ class SAPFile {
     private final JSONObject taxCodeBanCodeMap;
     GLCodeRevenueTypeMapFile glCodeRevenueTypeMapFile;
     private static final DecimalFormat df = new DecimalFormat("0.00");
+    private boolean isTaxPresent = false;
 
     public SAPFile(Path filePath, String header, List<String> debitRows, String footer, Path taxCodeBanCodeJsonFilePath, Path glCodeRevenueTypeMapFile) throws IOException, ParseException {
         this.filePath = filePath;
@@ -169,6 +170,8 @@ class SAPFile {
         this.footer = new Footer(footer);
         this.taxCodeBanCodeMap = this.readJSONFile(taxCodeBanCodeJsonFilePath);
         this.glCodeRevenueTypeMapFile = new GLCodeRevenueTypeMapFile(glCodeRevenueTypeMapFile);
+        this.isTaxPresent = this.debitRows.stream()
+                .anyMatch(debitRow -> debitRow.isTax);
     }
 
     public void checkAllTestCases() {
@@ -184,14 +187,18 @@ class SAPFile {
         System.out.print("CHECKING HEADER TOTAL AMOUNT: ");
         System.out.println(this.checkHeaderTotalAmount() ? "PASS" : "FAIL");
         
-        System.out.print("CHECKING HEADER TAX AMOUNT: ");
-        System.out.println(this.checkHeaderTaxAmount() ? "PASS" : "FAIL");
+        if(this.isTaxPresent) {
+        	System.out.print("CHECKING HEADER TAX AMOUNT: ");
+            System.out.println(this.checkHeaderTaxAmount() ? "PASS" : "FAIL");
+        }
         
         System.out.print("CHECKING FOOTER TOTAL AMOUNT: ");
         System.out.println(this.checkFooterTotalAmount() ? "PASS" : "FAIL");
         
-        System.out.print("CHECKING FOOTER TAX AMOUNT: ");
-        System.out.println(this.checkFooterTaxAmount() ? "PASS" : "FAIL");
+        if(this.isTaxPresent) {
+        	System.out.print("CHECKING FOOTER TAX AMOUNT: ");
+            System.out.println(this.checkFooterTaxAmount() ? "PASS" : "FAIL");
+        }
 
         System.out.print("CHECKING TAX CODE BAN CODE MAPPING: ");
         System.out.println(this.checkTaxCodeBanCodeMapping()? "PASS": "FAIL");
