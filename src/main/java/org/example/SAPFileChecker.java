@@ -159,8 +159,10 @@ class SAPFile {
         this.header = new Header(header);
         this.debitRows = new ArrayList<>();
         debitRows.forEach(row -> {
-            DebitRow debitRow = new DebitRow(row);
-            this.debitRows.add(debitRow);
+        	if(!row.trim().equals("")) {
+        		DebitRow debitRow = new DebitRow(row);
+                this.debitRows.add(debitRow);
+        	}
         });
         this.footer = new Footer(footer);
         this.taxCodeBanCodeMap = this.readJSONFile(taxCodeBanCodeJsonFilePath);
@@ -200,6 +202,9 @@ class SAPFile {
     private boolean checkTaxCodeBanCodeMapping() {
         boolean result = true;
         for (DebitRow debitRow: this.debitRows) {
+        	if (debitRow.isTax && !debitRow.taxCode.equals("B1")) {
+        		result = false;
+        	}
             final JSONArray banCodes = (JSONArray) taxCodeBanCodeMap.get(debitRow.taxCode);
             if (banCodes == null)
                 return false;
@@ -253,10 +258,11 @@ public class SAPFileChecker {
         }
         for (File file: files) {
         	if (!file.isDirectory()) {
-        		System.out.println(file.getName());
         		sapFileChecker.readFile(Paths.get(file.getAbsolutePath()), Paths.get(taxCodeBanCodeMapFile), Paths.get(glCodeRevenueTypeMapFile));
-                sapFileChecker.sapFiles.get(0).checkAllTestCases();
         	}
+        }
+        for (SAPFile sapFile: sapFileChecker.sapFiles) {
+        	sapFile.checkAllTestCases();
         }
         
     }
