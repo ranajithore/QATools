@@ -57,7 +57,7 @@ class DebitRow {
     DebitRow(String debitRow) {
         String[] data = debitRow.split(Delimiter.value);
 
-        this.isTax = data[0].trim().equals("T");
+        this.isTax = data[0].trim().equals("X");
 
         int glCodeColIdx = 1;
         this.glCode = String.valueOf(Long.parseLong(data[glCodeColIdx].trim()));
@@ -224,7 +224,7 @@ class SAPFile {
                 .map(debitRow -> debitRow.amount)
                 .reduce(0.0, Double::sum);
 
-        return  totalTaxAmount == this.header.totalAmount;
+        return  totalTaxAmount == this.header.taxAmount;
     }
 
     private boolean checkFooterTotalAmount() {
