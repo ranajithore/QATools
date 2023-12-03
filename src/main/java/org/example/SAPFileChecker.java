@@ -1,5 +1,6 @@
 package org.example;
 
+import java.text.DecimalFormat;
 import org.dhatim.fastexcel.reader.ReadableWorkbook;
 import org.dhatim.fastexcel.reader.Row;
 import org.dhatim.fastexcel.reader.Sheet;
@@ -153,6 +154,7 @@ class SAPFile {
     private final Footer footer;
     private final JSONObject taxCodeBanCodeMap;
     GLCodeRevenueTypeMapFile glCodeRevenueTypeMapFile;
+    private static final DecimalFormat df = new DecimalFormat("0.00");
 
     public SAPFile(Path filePath, String header, List<String> debitRows, String footer, Path taxCodeBanCodeJsonFilePath, Path glCodeRevenueTypeMapFile) throws IOException, ParseException {
         this.filePath = filePath;
@@ -215,7 +217,7 @@ class SAPFile {
                 .map(debitRow -> debitRow.amount)
                 .reduce(0.0, Double::sum);
 
-        return totalAmountForDebitRows + totalTaxAmount == this.header.totalAmount;
+        return df.format(totalAmountForDebitRows + totalTaxAmount).equals(Double.toString(this.header.totalAmount));
     }
     
     private boolean checkHeaderTaxAmount() {
@@ -224,7 +226,8 @@ class SAPFile {
                 .map(debitRow -> debitRow.amount)
                 .reduce(0.0, Double::sum);
 
-        return  totalTaxAmount == this.header.taxAmount;
+        return df.format(totalTaxAmount).equals(Double.toString(this.header.taxAmount));
+        
     }
 
     private boolean checkFooterTotalAmount() {
@@ -232,8 +235,10 @@ class SAPFile {
                 .filter(debitRow -> !debitRow.isTax)
                 .map(debitRow -> debitRow.amount)
                 .reduce(0.0, Double::sum);
+        
+        System.out.println(totalAmountForDebitRows + " " + this.footer.totalAmount);
 
-        return totalAmountForDebitRows == this.footer.totalAmount;
+        return df.format(totalAmountForDebitRows).equals(Double.toString(this.footer.totalAmount));
     }
     
     private boolean checkFooterTaxAmount() {
@@ -241,7 +246,8 @@ class SAPFile {
                 .filter(debitRow -> debitRow.isTax)
                 .map(debitRow -> debitRow.amount)
                 .reduce(0.0, Double::sum);
-    	return totalTaxAmount == this.footer.totalTaxAmount;
+    	
+    	return df.format(totalTaxAmount).equals(Double.toString(this.footer.totalTaxAmount));
     }
 
     private boolean checkTaxCodeBanCodeMapping() {
