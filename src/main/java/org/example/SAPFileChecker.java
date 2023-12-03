@@ -25,7 +25,7 @@ class Header {
     public String banCode;
     public double totalAmount;
     public double taxAmount;
-    public long numOfDebitColumns;
+    public long numOfDebitRows;
 
     Header(String headerRow) {
         String[] data = headerRow.split(Delimiter.value);
@@ -43,7 +43,7 @@ class Header {
         this.taxAmount = Double.parseDouble(taxAmount.substring(0, taxAmount.length() - 1));
 
         int numOfDebitColumnsColIdx = 9;
-        this.numOfDebitColumns = Long.parseLong(data[numOfDebitColumnsColIdx].trim());
+        this.numOfDebitRows = Long.parseLong(data[numOfDebitColumnsColIdx].trim());
     }
 }
 
@@ -172,15 +172,30 @@ class SAPFile {
     public void checkAllTestCases() {
         System.out.println("FILE " + filePath.getFileName());
         System.out.println("BAN CODE " + this.header.banCode);
+        
+        System.out.print("CHECKING TOTAL NUMBER OF ROWS IN HEADER: ");
+        System.out.println(this.checkTotalNumberOfRowsInHeader()? "PASS": "FAIL");
+        
+        System.out.print("CHECKING TOTAL NUMBER OF ROWS IN FOOTER: ");
+        System.out.println(this.checkTotalNumberOfRowsInFooter() ? "PASS": "FAIL");
 
-        System.out.print("CHECKING TOTAL AMOUNT: ");
-        System.out.println(this.checkTotalAmount() ? "PASS" : "FAIL");
+        System.out.print("CHECKING HEADER TOTAL AMOUNT: ");
+        System.out.println(this.checkHeaderTotalAmount() ? "PASS" : "FAIL");
+        
+        System.out.print("CHECKING HEADER TAX AMOUNT: ");
+        System.out.println(this.checkHeaderTaxAmount() ? "PASS" : "FAIL");
+        
+        System.out.print("CHECKING FOOTER TOTAL AMOUNT: ");
+        System.out.println(this.checkFooterTotalAmount() ? "PASS" : "FAIL");
+        
+        System.out.print("CHECKING FOOTER TAX AMOUNT: ");
+        System.out.println(this.checkFooterTaxAmount() ? "PASS" : "FAIL");
 
         System.out.print("CHECKING TAX CODE BAN CODE MAPPING: ");
         System.out.println(this.checkTaxCodeBanCodeMapping()? "PASS": "FAIL");
 
-        System.out.print("CHECKING GL CODE REVENUE TYPE MAPPING: ");
-        System.out.println(this.checkGLCodeRevenueTypeMapping()? "PASS": "FAIL");
+//        System.out.print("CHECKING GL CODE REVENUE TYPE MAPPING: ");
+//        System.out.println(this.checkGLCodeRevenueTypeMapping()? "PASS": "FAIL");
 
         System.out.println("\n\n");
     }
@@ -189,14 +204,44 @@ class SAPFile {
         String jsonString = new String(Files.readAllBytes(fileName));
         return (JSONObject) jsonParser.parse(jsonString);
     }
-
-    private boolean checkTotalAmount() {
+    
+    private boolean checkHeaderTotalAmount() {
         double totalAmountForDebitRows = debitRows.stream()
                 .filter(debitRow -> !debitRow.isTax)
                 .map(debitRow -> debitRow.amount)
                 .reduce(0.0, Double::sum);
-        return totalAmountForDebitRows == this.header.totalAmount &&
-                totalAmountForDebitRows == this.footer.totalAmount;
+        double totalTaxAmount = debitRows.stream()
+                .filter(debitRow -> debitRow.isTax)
+                .map(debitRow -> debitRow.amount)
+                .reduce(0.0, Double::sum);
+
+        return totalAmountForDebitRows + totalTaxAmount == this.header.totalAmount;
+    }
+    
+    private boolean checkHeaderTaxAmount() {
+        double totalTaxAmount = debitRows.stream()
+                .filter(debitRow -> debitRow.isTax)
+                .map(debitRow -> debitRow.amount)
+                .reduce(0.0, Double::sum);
+
+        return  totalTaxAmount == this.header.totalAmount;
+    }
+
+    private boolean checkFooterTotalAmount() {
+        double totalAmountForDebitRows = debitRows.stream()
+                .filter(debitRow -> !debitRow.isTax)
+                .map(debitRow -> debitRow.amount)
+                .reduce(0.0, Double::sum);
+
+        return totalAmountForDebitRows == this.footer.totalAmount;
+    }
+    
+    private boolean checkFooterTaxAmount() {
+    	double totalTaxAmount = debitRows.stream()
+                .filter(debitRow -> debitRow.isTax)
+                .map(debitRow -> debitRow.amount)
+                .reduce(0.0, Double::sum);
+    	return totalTaxAmount == this.footer.totalTaxAmount;
     }
 
     private boolean checkTaxCodeBanCodeMapping() {
@@ -216,16 +261,26 @@ class SAPFile {
         }
         return result;
     }
-
-    private boolean checkGLCodeRevenueTypeMapping() {
-        boolean result = true;
-        for (DebitRow debitRow: this.debitRows) {
-            if (!glCodeRevenueTypeMapFile.map.contains(debitRow.glCode, debitRow.revenueType)) {
-                result = false;
-            }
-        }
-        return result;
+    
+    private boolean checkTotalNumberOfRowsInHeader() {
+        return this.debitRows.size() == this.header.numOfDebitRows;
     }
+    
+    
+    private boolean checkTotalNumberOfRowsInFooter() {
+        return this.debitRows.size() + 2 == this.footer.totalNumberOfRows;
+    }
+
+    
+//    private boolean checkGLCodeRevenueTypeMapping() {
+//        boolean result = true;
+//        for (DebitRow debitRow: this.debitRows) {
+//            if (!glCodeRevenueTypeMapFile.map.contains(debitRow.glCode, debitRow.revenueType)) {
+//                result = false;
+//            }
+//        }
+//        return result;
+//    }
 }
 
 public class SAPFileChecker {
